@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "piggy-rag"
+name = "xiaoa-rag"
 version = "0.1.0"
 description = "A modular RAG (Retrieval-Augmented Generation) MCP Server for knowledge management"
 readme = "README.md"

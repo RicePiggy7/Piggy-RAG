@@ -1,4 +1,4 @@
-This is a sample document for testing the Piggy-RAG.
+This is a sample document for testing the xiaoA-RAG.
 
 It contains multiple paragraphs to test text splitting functionality.
 

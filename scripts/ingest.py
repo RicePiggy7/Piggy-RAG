@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Ingestion script for the Piggy-RAG.
+"""Ingestion script for the xiaoA-RAG.
 
 This script provides a command-line interface for ingesting documents into
 the knowledge hub. It supports processing single files or entire directories.

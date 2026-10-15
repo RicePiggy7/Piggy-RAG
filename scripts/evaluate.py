@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Evaluation script for Piggy-RAG.
+"""Evaluation script for xiaoA-RAG.
 
 Runs batch evaluation against a golden test set and outputs a metrics report.
 

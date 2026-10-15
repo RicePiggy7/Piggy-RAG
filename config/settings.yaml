@@ -1,4 +1,4 @@
-# Piggy-RAG - Configuration
+# xiaoA-RAG - Configuration
 # This is the main configuration file for the MCP Server.
 # Edit this file to configure LLM, Embedding, VectorStore, and other services.
 

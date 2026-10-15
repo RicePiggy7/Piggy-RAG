@@ -1,4 +1,4 @@
-"""Configuration loading and validation for the Piggy-RAG."""
+"""Configuration loading and validation for the xiaoA-RAG."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def resolve_path(relative: Union[str, Path]) -> Path:
     it is resolved against :data:`REPO_ROOT`.
 
     >>> resolve_path("config/settings.yaml")  # doctest: +SKIP
-    PosixPath('/home/user/Piggy-RAG/config/settings.yaml')
+    PosixPath('/home/user/xiaoA-RAG/config/settings.yaml')
     """
     p = Path(relative)
     if p.is_absolute():

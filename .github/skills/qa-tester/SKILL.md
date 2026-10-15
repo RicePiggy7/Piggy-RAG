@@ -1,6 +1,6 @@
 ---
 name: qa-tester
-description: "Fully autonomous QA testing agent for Piggy-RAG. Reads test cases from QA_TEST_PLAN.md, executes ALL test types automatically without human intervention — CLI commands, Dashboard UI via Streamlit AppTest headless rendering, MCP protocol via subprocess JSON-RPC, provider switches, and data lifecycle checks. Diagnoses failures, applies fixes with up to 3 retry rounds, and records results in QA_TEST_PROGRESS.md. Use when user says 'run QA', 'QA test', 'QA 测试', '执行测试', '跑测试', 'test and fix', or wants to execute QA test plan."
+description: "Fully autonomous QA testing agent for xiaoA-RAG. Reads test cases from QA_TEST_PLAN.md, executes ALL test types automatically without human intervention — CLI commands, Dashboard UI via Streamlit AppTest headless rendering, MCP protocol via subprocess JSON-RPC, provider switches, and data lifecycle checks. Diagnoses failures, applies fixes with up to 3 retry rounds, and records results in QA_TEST_PROGRESS.md. Use when user says 'run QA', 'QA test', 'QA 测试', '执行测试', '跑测试', 'test and fix', or wants to execute QA test plan."
 ---
 
 # QA Tester

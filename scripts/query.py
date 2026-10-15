@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Query script for the Piggy-RAG.
+"""Query script for the xiaoA-RAG.
 
 This script provides a command-line interface for querying the knowledge hub
 using HybridSearch (Dense + Sparse + RRF) with optional reranking.

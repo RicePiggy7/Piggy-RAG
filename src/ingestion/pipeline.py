@@ -1,4 +1,4 @@
-"""Ingestion Pipeline orchestrator for the Piggy-RAG.
+"""Ingestion Pipeline orchestrator for the xiaoA-RAG.
 
 This module implements the main pipeline that orchestrates the complete
 document ingestion flow:

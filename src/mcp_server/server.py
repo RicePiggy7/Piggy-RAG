@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     pass
 
 
-SERVER_NAME = "piggy-rag"
+SERVER_NAME = "xiaoa-rag"
 SERVER_VERSION = "0.1.0"
 
 

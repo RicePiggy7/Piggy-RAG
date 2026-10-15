@@ -1,4 +1,4 @@
-# Piggy-RAG
+# xiaoA-RAG
 
 > 一个可插拔、可观测的模块化 RAG（检索增强生成）服务框架，通过 MCP（Model Context Protocol）协议对外暴露工具接口，支持 Copilot / Claude 等 AI 助手直接调用。
 
@@ -19,7 +19,7 @@
 
 ### 这个项目是什么
 
-Piggy-RAG 将 RAG 系统的核心环节——**检索（Hybrid Search + Rerank）**、**多模态视觉处理（Image Captioning）**、**RAG 评估（Ragas + Custom）**、**生成（LLM Response）**——以及应用协议 **MCP（Model Context Protocol）** 串联为一个完整的、可运行的工程项目。
+xiaoA-RAG 将 RAG 系统的核心环节——**检索（Hybrid Search + Rerank）**、**多模态视觉处理（Image Captioning）**、**RAG 评估（Ragas + Custom）**、**生成（LLM Response）**——以及应用协议 **MCP（Model Context Protocol）** 串联为一个完整的、可运行的工程项目。
 
 **项目的一大亮点是极易适配到你自己的业务中**。得益于全链路可插拔架构，你可以快速将它结合到自己已有的项目里，具体的使用方式见 [使用场景](#-使用场景)。
 
@@ -68,7 +68,7 @@ Piggy-RAG 将 RAG 系统的核心环节——**检索（Hybrid Search + Rerank�
 
 ```bash
 git clone <repo-url>
-cd Piggy-RAG
+cd xiaoA-RAG
 ```
 
 ### 2. 一键配置（Setup Skill）
