@@ -265,7 +265,7 @@ pytest tests/integration   # 集成测试（部分需要本地服务）
 ## 📌 项目状态与贡献
 
 - 项目核心功能已完成并通过三层测试（Unit / Integration / E2E），但属于**学习/实验性质**，不承诺生产级稳定性
-- 欢迎通过 Issue 和 PR 反馈 Bug、改进建议与新功能
+- 欢迎通过 Issue 和 PR 反馈 Bug、改进建议与新功能，贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)
 - 鼓励大家 Fork 后结合自己的业务场景做定制化扩展
 
 ## 📄 License
