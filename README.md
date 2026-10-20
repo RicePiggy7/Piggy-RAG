@@ -1,6 +1,12 @@
 # xiaoA-RAG
 
+[![CI](https://github.com/RicePiggy7/xiaoA-RAG/actions/workflows/ci.yml/badge.svg)](https://github.com/RicePiggy7/xiaoA-RAG/actions/workflows/ci.yml)
+
+[简体中文](README.md) | [English](README_EN.md)
+
 > 一个可插拔、可观测的模块化 RAG（检索增强生成）服务框架，通过 MCP（Model Context Protocol）协议对外暴露工具接口，支持 Copilot / Claude 等 AI 助手直接调用。
+
+![xiaoA-RAG overview](docs/images/xiaoA-rag-overview.png)
 
 ---
 
