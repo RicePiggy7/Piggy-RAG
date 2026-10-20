@@ -10,12 +10,15 @@ This module builds structured responses for MCP tools, combining:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from mcp import types
 
 from src.core.response.citation_generator import Citation, CitationGenerator
 from src.core.types import RetrievalResult
+
+if TYPE_CHECKING:
+    from src.core.response.multimodal_assembler import MultimodalAssembler
 
 
 @dataclass

@@ -165,16 +165,24 @@ def test_tokenize_handles_punctuation():
 
 
 def test_tokenize_handles_hyphens_and_underscores():
-    """Test that hyphens and underscores are preserved."""
+    """Test hyphen/underscore-separated terms are split into word tokens.
+
+    jieba treats '-' and '_' as separators (consistent on both the index
+    side and the query side), so compound terms are indexed as separate
+    words. Punctuation itself must never appear as a term.
+    """
     encoder = SparseEncoder()
     chunks = [
         Chunk(id="1", text="machine-learning deep_learning", metadata={"source_path": "test.txt"})
     ]
-    
+
     results = encoder.encode(chunks)
-    
-    assert "machine-learning" in results[0]["term_frequencies"]
-    assert "deep_learning" in results[0]["term_frequencies"]
+
+    assert "machine" in results[0]["term_frequencies"]
+    assert "learning" in results[0]["term_frequencies"]
+    assert "deep" in results[0]["term_frequencies"]
+    assert "-" not in results[0]["term_frequencies"]
+    assert "_" not in results[0]["term_frequencies"]
 
 
 def test_tokenize_handles_numbers():
@@ -183,14 +191,17 @@ def test_tokenize_handles_numbers():
     chunks = [
         Chunk(id="1", text="Python 3.11 and GPT-4", metadata={"source_path": "test.txt"})
     ]
-    
+
     results = encoder.encode(chunks)
-    
+
     # Numbers should be preserved as alphanumeric tokens
     assert "python" in results[0]["term_frequencies"]
-    # "3.11" may be split into "3" and "11" depending on tokenizer
-    # "gpt-4" should be preserved as hyphenated term
-    assert "gpt-4" in results[0]["term_frequencies"]
+    # jieba keeps decimal numbers whole ("3.11") and splits hyphenated
+    # compounds ("gpt-4" -> "gpt", "4"); single-character terms like "4"
+    # are dropped by min_term_length=2
+    assert "3.11" in results[0]["term_frequencies"]
+    assert "gpt" in results[0]["term_frequencies"]
+    assert "4" not in results[0]["term_frequencies"]
 
 
 # ============================================================================

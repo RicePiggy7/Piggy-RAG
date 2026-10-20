@@ -30,6 +30,10 @@ def mock_settings_openai() -> Any:
     settings.embedding.model = "text-embedding-3-small"
     settings.embedding.dimensions = 1536
     settings.embedding.base_url = None  # No base_url in settings by default
+    settings.embedding.api_key = None
+    settings.embedding.azure_endpoint = None
+    settings.embedding.api_version = None
+    settings.embedding.deployment_name = None
     return settings
 
 
@@ -44,6 +48,7 @@ def mock_settings_azure() -> Any:
     settings.embedding.azure_endpoint = "https://my-resource.openai.azure.com/"
     settings.embedding.api_version = "2024-02-01"
     settings.embedding.dimensions = None
+    settings.embedding.api_key = None
     return settings
 
 
@@ -236,9 +241,13 @@ class TestAzureEmbedding:
         """Test initialization with Azure environment variables."""
         monkeypatch.setenv("AZURE_OPENAI_API_KEY", "azure-env-key")
         monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://env.openai.azure.com/")
-        
+
+        # Env vars only apply when settings values are absent
+        mock_settings_azure.embedding.api_key = None
+        mock_settings_azure.embedding.azure_endpoint = None
+
         embedding = AzureEmbedding(mock_settings_azure)
-        
+
         assert embedding.api_key == "azure-env-key"
         assert embedding.azure_endpoint == "https://env.openai.azure.com/"
     

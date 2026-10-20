@@ -192,20 +192,29 @@ class ProtocolHandler:
 def _register_default_tools(protocol_handler: ProtocolHandler) -> None:
     """Register all default MCP tools with the protocol handler.
 
+    Tools whose names are already registered are skipped, so a
+    pre-configured handler keeps its custom tool definitions.
+
     Args:
         protocol_handler: ProtocolHandler instance to register tools with.
     """
+    default_tool_names = {"query_knowledge_hub", "list_collections", "get_document_summary"}
+    already_registered = {name for name in default_tool_names if name in protocol_handler.tools}
+
     # Import and register query_knowledge_hub tool
-    from src.mcp_server.tools.query_knowledge_hub import register_tool as register_query_tool
-    register_query_tool(protocol_handler)
-    
+    if "query_knowledge_hub" not in already_registered:
+        from src.mcp_server.tools.query_knowledge_hub import register_tool as register_query_tool
+        register_query_tool(protocol_handler)
+
     # Import and register list_collections tool
-    from src.mcp_server.tools.list_collections import register_tool as register_list_tool
-    register_list_tool(protocol_handler)
-    
+    if "list_collections" not in already_registered:
+        from src.mcp_server.tools.list_collections import register_tool as register_list_tool
+        register_list_tool(protocol_handler)
+
     # Import and register get_document_summary tool
-    from src.mcp_server.tools.get_document_summary import register_tool as register_summary_tool
-    register_summary_tool(protocol_handler)
+    if "get_document_summary" not in already_registered:
+        from src.mcp_server.tools.get_document_summary import register_tool as register_summary_tool
+        register_summary_tool(protocol_handler)
 
 
 def create_mcp_server(
@@ -240,7 +249,7 @@ def create_mcp_server(
         _register_default_tools(protocol_handler)
 
     # Create low-level server
-    server = Server(server_name)
+    server = Server(server_name, version=server_version)
 
     # Register tools/list handler
     @server.list_tools()

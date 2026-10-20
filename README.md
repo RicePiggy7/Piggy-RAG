@@ -64,26 +64,98 @@ xiaoA-RAG 将 RAG 系统的核心环节——**检索（Hybrid Search + Rerank�
 
 ## 🚀 快速开始
 
-### 1. 克隆项目
+### 1. 克隆并安装
+
+要求 Python 3.10+：
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/RicePiggy7/xiaoA-RAG.git
 cd xiaoA-RAG
+
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e .            # 加测试工具: pip install -e ".[dev]"
 ```
 
-### 2. 一键配置（Setup Skill）
+### 2. 配置 Provider
 
-本项目提供了 **Setup Skill** 一键完成所有环境配置，包括：Provider 选择 → API Key 配置 → 依赖安装 → 配置文件生成 → Dashboard 启动。
+编辑 `config/settings.yaml`，按你想用的 Provider 修改 `llm` 和 `embedding` 两段。
 
-在 VS Code 中打开项目，通过 Copilot 对话框输入：
+**方式 A — Ollama（本地免费，推荐先跑通）**：先[安装 Ollama](https://ollama.com) 并拉取模型（`ollama pull llama3.1` 和 `ollama pull nomic-embed-text`），然后：
 
+```yaml
+llm:
+  provider: "ollama"
+  model: "llama3.1"
+  base_url: "http://localhost:11434"
+
+embedding:
+  provider: "ollama"
+  model: "nomic-embed-text"
+  dimensions: 768
+  base_url: "http://localhost:11434"
 ```
-setup
+
+**方式 B — OpenAI**：把 `llm.api_key` 和 `embedding.api_key` 换成你的 Key（或设置环境变量 `OPENAI_API_KEY`）。DeepSeek/Azure 同理，见 `config/settings.yaml` 内注释。
+
+### 3. 摄取文档并查询
+
+```bash
+# 摄取测试文档（也可以指向你自己的 PDF 目录）
+python scripts/ingest.py --path tests/fixtures/sample_documents
+
+# 命令行查询
+python scripts/query.py --query "什么是混合检索"
+
+# 启动可视化管理平台（http://localhost:8501）
+python scripts/start_dashboard.py
 ```
 
-Agent 会自动引导你完成全部配置流程。
+### 4. 接入 MCP 客户端
 
-也可以手动配置：复制 `config/settings.yaml` 中的 Provider 段落，填入你的 API Key，然后参考 [DEV_SPEC.md](DEV_SPEC.md) 中的环境要求安装依赖。
+MCP Server 通过 stdio 传输启动（配置路径按代码仓库内文件解析，与工作目录无关）：
+
+```bash
+python main.py        # 或 pip install 后直接运行 mcp-server
+```
+
+**VS Code（GitHub Copilot）** — 在 `.vscode/mcp.json` 中添加：
+
+```json
+{
+  "servers": {
+    "xiaoA-RAG": {
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": ["${workspaceFolder}/main.py"]
+    }
+  }
+}
+```
+
+**Claude Desktop** — 在 `claude_desktop_config.json` 中添加：
+
+```json
+{
+  "mcpServers": {
+    "xiaoA-RAG": {
+      "command": "/absolute/path/to/xiaoA-RAG/.venv/bin/python",
+      "args": ["/absolute/path/to/xiaoA-RAG/main.py"]
+    }
+  }
+}
+```
+
+之后即可在客户端里调用 `query_knowledge_hub` / `list_collections` / `get_document_summary` 三个工具。
+
+### 5. 运行测试
+
+```bash
+pip install -e ".[dev]"
+pytest tests/unit          # 单元测试（离线，不需要 API Key）
+pytest tests/integration   # 集成测试（部分需要本地服务）
+```
+
+> 💡 **VS Code 用户**：也可以用项目内置的 **Setup Skill**（`.github/skills/setup/`）一键完成 Provider 选择 → API Key → 依赖安装 → 配置生成的引导流程，在 Copilot 对话框输入 `setup` 即可。
 
 ---
 
