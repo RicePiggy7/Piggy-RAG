@@ -4,7 +4,9 @@
 
 English | [简体中文](README.md)
 
-A pluggable, observable RAG (Retrieval-Augmented Generation) service framework that exposes its tools over MCP (Model Context Protocol), so AI assistants such as GitHub Copilot and Claude can call them directly.
+xiaoA-RAG provides PDF knowledge retrieval over MCP. After you import documents, AI assistants such as GitHub Copilot and Claude can retrieve relevant passages and use source citations in their answers.
+
+The project includes document ingestion, hybrid retrieval, optional reranking, image captioning, a dashboard with tracing, and evaluation. Connect your own documents, replace models, adjust retrieval settings, or extend individual components.
 
 ![xiaoA-RAG overview](docs/images/xiaoA-rag-overview.png)
 
@@ -15,78 +17,95 @@ A pluggable, observable RAG (Retrieval-Augmented Generation) service framework t
 - [Use Cases](#use-cases)
 - [Agent Skills](#agent-skills)
 - [FAQ](#faq)
-- [Status and Contributing](#status-and-contributing)
+- [Contributing](#contributing)
 
 ## Overview
 
-### What this project is
+### From documents to answers
 
-xiaoA-RAG chains the core stages of a RAG system — **retrieval (hybrid search + rerank)**, **multimodal image processing (image captioning)**, **RAG evaluation (Ragas + custom metrics)**, and **generation (LLM response)** — together with the **MCP protocol** into one complete, runnable project.
+Retrieval-augmented generation (RAG) retrieves relevant document content before a model uses it to answer a question. xiaoA-RAG handles document processing and retrieval, then supplies results through MCP, the protocol AI assistants use to connect to external tools. You can access the knowledge base from your existing assistant.
 
-Because every component sits behind a pluggable interface, you can adapt the system to your own documents and services with configuration changes instead of code changes. See [Use Cases](#use-cases) for common ways to do this.
+```text
+Ingestion: PDF → parse and extract images → chunk → enrich → vector and BM25 indexes
+Query:     AI assistant → MCP query → vector and keyword retrieval → RRF → optional rerank
+Response:  passages, citations, and related images → AI assistant composes an answer
+```
 
-### Not just code, an engineering approach
+The query tool returns evidence for the assistant to use. The CLI displays retrieval results directly so you can inspect the returned passages.
 
-The development workflow behind this project is as reusable as the code itself:
+### Retrieval and reranking
 
-- How to write a **DEV_SPEC** (development specification) that drives implementation
-- How to use **Skills** to generate code from the spec automatically
-- How to use **Skills** for automated testing, packaging, and environment setup
-- How to extend a pluggable architecture (for example, toward Agents)
+Vector retrieval finds content by meaning; BM25 matches keywords. Reciprocal Rank Fusion (RRF) combines the two result lists. An optional Cross-Encoder or LLM reranker then reorders candidate passages.
 
-### Core capabilities
+Reranking is disabled by default. Chunk size, retrieval limits, fusion parameters, and the reranker model are configurable.
 
-| Module | Capability | Notes |
-|------|------|------|
-| **Ingestion Pipeline** | PDF → Markdown → chunk → transform → embed → upsert | Full ingestion chain with multimodal image captioning |
-| **Hybrid Search** | Dense (vectors) + Sparse (BM25) + RRF fusion + rerank | Coarse recall plus fine reranking, two-stage retrieval |
-| **MCP Server** | Standard MCP tools | `query_knowledge_hub`, `list_collections`, `get_document_summary` |
-| **Dashboard** | Six-page Streamlit app | Overview, data browser, ingestion management, ingestion trace, query trace, evaluation panel |
-| **Evaluation** | Ragas + custom metrics | Golden test set regression testing, no tuning by gut feeling |
-| **Observability** | Full-link tracing | Every intermediate stage of both ingestion and query paths is visible |
-| **Skill-driven workflow** | Coding, testing, packaging, setup in one flow | auto-coder / qa-tester / package / setup / skill-creator cover the full development lifecycle |
+### Document images
 
-### Highlights
+The ingestion pipeline extracts images from PDFs. When a vision model is enabled, image descriptions are added to text chunks for embedding and retrieval. MCP responses can include related images when the retrieved chunks reference them, for clients that support image content.
 
-**Pluggable end to end.** LLM, embedding, reranker, splitter, vector store, and evaluator each define an abstract interface. Swap backends through the config file with no code changes.
+### Dashboard and tracing
 
-**Hybrid retrieval with rerank.** BM25 handles exact matching of proper nouns; dense embeddings handle synonyms and paraphrase. RRF fuses the two lists, and an optional Cross-Encoder or LLM reranker refines the top results.
+The Streamlit dashboard has six pages: overview, data browser, ingestion management, ingestion traces, query traces, and evaluation.
 
-**Multimodal via image captioning.** A Vision LLM writes descriptions for images inside documents and stitches them into the chunks, so the plain-text pipeline can answer "search text, get image" queries without a multimodal vector store.
+Import and manage documents, inspect chunks and enrichment, and review indexing, retrieval, fusion, and reranking results. Traces help you compare intermediate results after changing settings.
 
-**MCP integration.** The server follows the Model Context Protocol over stdio, so any MCP client — GitHub Copilot, Claude Desktop, Cursor — can call it without custom frontend work.
+### Evaluation and components
 
-**Dashboard and evaluation.** A Streamlit dashboard covers data management and trace inspection, and Ragas-based evaluation builds a data-driven feedback loop for retrieval tuning.
+Custom Evaluator provides retrieval metrics such as Hit Rate and MRR. Ragas evaluates answer faithfulness, relevance, and other metrics. Use your own questions, relevance labels, and answers to compare configurations.
 
-**Three-layer test suite.** Unit, integration, and E2E tests cover module logic, module interaction, and full chains (MCP client, dashboard).
+LLM, embedding, reranker, splitter, vector store, and evaluator components have separate interfaces and factories. Select an existing backend through configuration, or implement its interface and register a new backend.
 
-For architecture details, module descriptions, and the task schedule, see [DEV_SPEC.md](DEV_SPEC.md).
+| Component | Implementations |
+|-----------|-----------------|
+| Text models | OpenAI, Azure OpenAI, Ollama, DeepSeek |
+| Embeddings | OpenAI, Azure OpenAI, Ollama |
+| Vision models | OpenAI, Azure OpenAI |
+| Document parsing | PDF |
+| Text splitting | Recursive splitting |
+| Vector storage | Chroma |
+| Reranking | Cross-Encoder, LLM |
+| Evaluation | Custom, Ragas, composite evaluation |
+
+See [DEV_SPEC.md](DEV_SPEC.md) for architecture and module details, and [CONTRIBUTING.md](CONTRIBUTING.md#项目结构速览) for the source directory layout.
 
 ## Quick Start
 
 ### 1. Clone and install
 
-Requires Python 3.10+:
+Requires Python 3.10+. CI covers Python 3.10, 3.11, and 3.12.
 
 ```bash
 git clone https://github.com/RicePiggy7/xiaoA-RAG.git
 cd xiaoA-RAG
 
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e .            # with test tools: pip install -e ".[dev]"
+source .venv/bin/activate
+pip install -e .
 ```
 
-### 2. Configure a provider
+On Windows, activate the environment with `.venv\Scripts\activate`. Run the following commands from the project root.
 
-Edit `config/settings.yaml` and adjust the `llm` and `embedding` sections.
+### 2. Configure models
 
-**Option A — Ollama (local and free, good for a first run)**: install [Ollama](https://ollama.com), pull the models (`ollama pull llama3.1` and `ollama pull nomic-embed-text`), then set:
+Edit `config/settings.yaml`. Choose local models or OpenAI below.
+
+**Local models: Ollama**
+
+[Install and start Ollama](https://ollama.com), then download a text model and an embedding model:
+
+```bash
+ollama pull llama3.1
+ollama pull nomic-embed-text
+```
+
+Replace the entire `llm`, `embedding`, and `vision_llm` sections with the following. Keep the other sections unchanged.
 
 ```yaml
 llm:
   provider: "ollama"
   model: "llama3.1"
+  temperature: 0.0
+  max_tokens: 4096
   base_url: "http://localhost:11434"
 
 embedding:
@@ -94,32 +113,77 @@ embedding:
   model: "nomic-embed-text"
   dimensions: 768
   base_url: "http://localhost:11434"
+
+vision_llm:
+  enabled: false
+  provider: "openai"
+  model: "gpt-4o"
+  max_image_size: 2048
 ```
 
-**Option B — OpenAI**: replace `llm.api_key` and `embedding.api_key` with your key (or set the `OPENAI_API_KEY` environment variable). DeepSeek and Azure work the same way; see the comments in `config/settings.yaml`.
+This configuration uses local models for text processing and embeddings, with image captioning disabled. The default Ollama address is `http://localhost:11434`; set `OLLAMA_BASE_URL` to use a different address.
 
-### 3. Ingest documents and query
+**Cloud models: OpenAI**
+
+Replace the same three sections with:
+
+```yaml
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0.0
+  max_tokens: 4096
+  api_key: null
+
+embedding:
+  provider: "openai"
+  model: "text-embedding-ada-002"
+  dimensions: 1536
+  api_key: null
+
+vision_llm:
+  enabled: true
+  provider: "openai"
+  model: "gpt-4o"
+  max_image_size: 2048
+  api_key: null
+```
+
+Set the `OPENAI_API_KEY` environment variable, or fill in `api_key` in all three sections. A nonempty configuration key takes precedence over the environment variable. Cloud model calls incur the provider's API charges.
+
+For the official OpenAI service, remove `azure_endpoint`, `deployment_name`, and `api_version` from the original configuration. Keeping `azure_endpoint` makes the OpenAI adapter use Azure-compatible mode.
+
+DeepSeek can serve as the text model; choose OpenAI, Azure OpenAI, or Ollama separately for embeddings. See the [setup configuration guide](.github/skills/setup/references/provider_profiles.md) for Azure fields and other model options.
+
+### 3. Import documents and query
 
 ```bash
-# Ingest the test documents (or point --path at your own PDF directory)
+# Import the sample PDFs
 python scripts/ingest.py --path tests/fixtures/sample_documents
 
-# Query from the command line
-python scripts/query.py --query "什么是混合检索"
+# Inspect retrieved passages and intermediate results
+python scripts/query.py --query "What is hybrid search?" --verbose
 
-# Start the dashboard (http://localhost:8501)
+# Start the dashboard
 python scripts/start_dashboard.py
 ```
 
-### 4. Connect an MCP client
+The dashboard defaults to [http://localhost:8501](http://localhost:8501). Ingestion reports processed files and chunk counts. Query results include passages, scores, and source paths.
 
-The MCP server runs over stdio (paths inside the config resolve relative to the repository, so the working directory does not matter):
+To import your own documents, point `--path` to a PDF or directory. Use `--collection` to separate knowledge bases, with the same name for ingestion and retrieval:
 
 ```bash
-python main.py        # or run `mcp-server` after pip install
+python scripts/ingest.py --path /path/to/pdfs --collection my_docs
+python scripts/query.py --query "A question about these documents" --collection my_docs
 ```
 
-**VS Code (GitHub Copilot)** — add to `.vscode/mcp.json`:
+### 4. Connect an AI assistant
+
+The MCP server uses stdio and is launched by the client. You can also start it with `python main.py` or the installed `mcp-server` command.
+
+**VS Code (GitHub Copilot)**
+
+Add to the project's `.vscode/mcp.json`:
 
 ```json
 {
@@ -132,7 +196,9 @@ python main.py        # or run `mcp-server` after pip install
 }
 ```
 
-**Claude Desktop** — add to `claude_desktop_config.json`:
+**Claude Desktop**
+
+Add to `claude_desktop_config.json`, replacing the paths with absolute paths on your machine:
 
 ```json
 {
@@ -145,120 +211,115 @@ python main.py        # or run `mcp-server` after pip install
 }
 ```
 
-Your client can then call the three tools: `query_knowledge_hub`, `list_collections`, `get_document_summary`.
+On Windows, Python is at `.venv\Scripts\python.exe`; escape backslashes as `\\` in JSON. If you use an environment variable for the API key, make sure the client-launched process receives it. You can pass it through the client's MCP environment settings.
 
-### 5. Run the tests
+Three tools are available:
+
+| Tool | Purpose |
+|------|---------|
+| `query_knowledge_hub` | Retrieve passages, citations, and related images |
+| `list_collections` | List document collections and statistics |
+| `get_document_summary` | Get summary information for a document |
+
+Try asking your assistant: “Search the xiaoA-RAG knowledge base, explain hybrid search, and cite the sources.”
+
+### 5. Run tests
 
 ```bash
 pip install -e ".[dev]"
-pytest tests/unit          # unit tests (offline, no API key needed)
-pytest tests/integration   # integration tests (some need local services)
+
+pytest tests/unit
+pytest tests/integration
+pytest tests/e2e
 ```
 
-> **VS Code users**: the built-in **Setup Skill** (`.github/skills/setup/`) can walk you through provider selection, API keys, dependency installation, and config generation — type `setup` in the Copilot chat panel.
+Unit tests mock external calls. Integration and E2E tests use model services, API credentials, or indexed data as required by each case. Tests marked `llm` call real models. CI runs unit tests and basic code checks.
 
 ## Use Cases
 
-Different backgrounds call for different uses of the project, so pick what fits instead of following one fixed path.
+### Give AI assistants access to documents
 
-### 1. Learning RAG with a complete reference implementation
+Import product manuals, technical references, or business PDFs and connect through MCP. The assistant can retrieve relevant content and cite document sources in its answers.
 
-The project is a full RAG system, so it works as a practical companion to any RAG book or course: retrieval, generation, vector stores, chunking strategies, and reranking are all implemented and runnable, and the pipeline matches how these topics are usually taught.
+### Adjust retrieval quality
 
-### 2. Extending the project as a starting point
+Use your own documents and questions to inspect vector, BM25, fusion, and reranking results. Adjust chunk size, retrieval limits, and model selection, then compare metrics with labeled data.
 
-The DEV_SPEC lists extension directions. Common ones:
+### Integrate with an agent or another project
 
-- **Add agent capabilities**: implement the agent side — context handling, tool calling, ReAct logic — and use this project as one module, turning it into an **Agent + RAG** project
-- **Show backend engineering skills**: add deployment with a Dockerfile, CI/CD pipelines, monitoring, and log collection
-- **Go deeper on retrieval**: extend toward Agentic RAG or Graph RAG, or run more retrieval strategy experiments
-
-A practical suggestion: ingest documents from your own field — finance, law, medicine, or your own work documents — and check retrieval quality. When results are poor, adjust and improve. That process is where most of the learning happens.
-
-### 3. Embedding retrieval into an existing system
-
-Because the server speaks MCP and every component is pluggable, the retrieval capability can run as an independent service: an agent project can treat `query_knowledge_hub` as one of its tools, and an existing backend can use the MCP server as a knowledge-retrieval microservice.
-
-### 4. Trying a spec-driven development workflow
-
-To experience the full **write spec → AI codes → iterate → test** loop, walk through it once with this repo: read the DEV_SPEC structure, change a section, and let an agent re-implement a module from the updated spec. The same spec-driven, skill-automated approach works for any project.
+An agent can use `query_knowledge_hub` as its retrieval tool while managing context, conversations, and task execution itself. You can also reuse ingestion or retrieval modules and replace components through their interfaces.
 
 ## Agent Skills
 
-The repository ships agent skills that cover the development lifecycle, in `.github/skills/`:
+The repository includes [DEV_SPEC.md](DEV_SPEC.md) and [Agent Skills](.github/skills/). The specification describes architecture, module interfaces, and development tasks. Skills provide workflows for AI coding tools that support them.
 
 | Skill | Purpose |
-|-------|------|
-| **auto-coder** | Reads task definitions and architecture rules from the DEV_SPEC, implements code, runs tests, and retries fixes automatically |
-| **qa-tester** | Runs the full QA plan (CLI, dashboard UI, MCP protocol, provider switching) |
-| **setup** | Interactive setup wizard: provider selection → API key → dependencies → config generation → dashboard launch |
-| **package** | One-command cleanup and packaging: removes caches, build artifacts, and sensitive files |
-| **skill-creator** | Scaffolding tool for creating new agent skills |
+|-------|---------|
+| [auto-coder](.github/skills/auto-coder/SKILL.md) | Implement modules from the specification, run tests, and resolve errors |
+| [qa-tester](.github/skills/qa-tester/SKILL.md) | Check CLI, dashboard, MCP, and model switching against the test plan |
+| [setup](.github/skills/setup/SKILL.md) | Guide model selection, credentials, dependency installation, and service startup |
+| [package](.github/skills/package/SKILL.md) | Clean caches, build artifacts, and sensitive configuration for distribution |
+| [skill-creator](.github/skills/skill-creator/SKILL.md) | Create a new skill directory and instructions |
 
-Open the project in an environment that supports skills (VS Code with GitHub Copilot) and they are ready to use. Skills follow one pattern — Markdown knowledge files plus a structured workflow — so you can extend agent capabilities by writing new skills with `skill-creator`.
+Open the project in a tool that supports Agent Skills and select a skill for configuration, development, or verification. When extending a module, you can update its interfaces and acceptance criteria in the specification before asking an agent to implement it.
 
 ## FAQ
 
-### 1. How do I switch providers (Qwen, DeepSeek, Ollama)?
+### How do I switch models or add a backend?
 
-The provider layer uses the **factory pattern**, so adding or switching a provider is cheap. Most provider APIs are similar HTTP calls, and most of them follow the OpenAI request format.
+Select an existing backend through `provider` and `model`. To add a backend, implement the relevant interface in `src/libs/`, register it with the factory, and add configuration and tests. See the [new provider guide](.github/skills/setup/references/new_provider_guide.md).
 
-Two ways to do it:
+After changing embedding models, regenerate document vectors with the new model. Use a new collection to avoid mixing embeddings; vectors from different models are incompatible even when their dimensions match.
 
-1. **Use the Setup Skill (recommended)**: it asks which provider you want, collects the API key, and writes the adapter code and config for you.
-2. **Ask an AI to do it**: describe the switch ("switch to Qwen", "configure DeepSeek") and the agent applies the change following the factory structure.
+### How do I enable Cross-Encoder reranking?
 
-**How it works**: the modules under `src/libs/` (LLM, embedding, reranker) all use factories. A new provider needs three steps: a provider class, a factory registration, and a `settings.yaml` update.
+Install the model dependency:
 
-### 2. Custom evaluator and Cross-Encoder reranker
+```bash
+pip install sentence-transformers
+```
 
-Both modules have their framework in place but have not been fully tested. If you are interested, complete them:
+Replace the `rerank` section with:
 
-| Module | Status | What it needs |
-|------|------|-----------|
-| **Custom evaluator** | Framework ready, untested | Define the evaluation method and prepare a test dataset |
-| **Cross-Encoder reranker** | Framework ready, untested | Download a local rerank model such as `cross-encoder/ms-marco-MiniLM-L-6-v2` |
+```yaml
+rerank:
+  enabled: true
+  provider: "cross_encoder"
+  model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  top_k: 5
+```
 
-### 3. What about bugs and errors?
+The model downloads on first use. You can also specify a local model path. Choose a model suited to the language of your documents and queries.
 
-This is a learning and experimentation project, not tested for production use, so errors can happen.
+### How do I evaluate my knowledge base?
 
-- **Fixing**: paste the error message into an AI assistant — it solves most of them.
-- Bug reports via Issues are welcome.
+Choose an evaluator in the dashboard or run `scripts/evaluate.py`. See [golden_test_set.json](tests/fixtures/golden_test_set.json) for the test set format.
 
-### 4. Document formats other than PDF (Word, Markdown, HTML)?
+Hit Rate and MRR need relevant `expected_chunk_ids` for each question. Ragas answer evaluation needs the actual answer being evaluated and model configuration. Contributions of domain questions, relevance labels, and evaluation methods are welcome.
 
-The loader layer is pluggable (`BaseLoader`) and ships a PDF loader. The extension points for other formats are already in place: add one loader class per format, following the PDF loader.
+### How do I support Word, Markdown, or HTML?
 
-For example, tell an AI: "add a Word document loader, following the existing PDF loader" — it can do that.
+`BaseLoader` defines the parsing interface, and the current ingestion pipeline uses `PdfLoader`. Add a loader, connect format selection to the pipeline, and update CLI file filtering and dashboard upload types.
 
-### 5. How do I integrate it into AI tools (Copilot, Cursor, Claude Code)?
+### What should I check when something fails or results are poor?
 
-This project is an **MCP server**, so it works with any MCP-capable client (GitHub Copilot, Cursor, Claude Desktop, Claude Code).
+For connection failures, check the service address, model name, and API credentials. For empty results, confirm that documents were imported and that the query uses the same collection and embedding model. For irrelevant results, inspect the returned passages at each stage in query traces.
 
-The integration is a client-specific MCP config file:
+Report issues with reproduction steps, environment details, and logs with sensitive information removed. For retrieval problems, include shareable sample documents, a query, and expected results when possible.
 
-- **Copilot (VS Code)**: have an AI generate the MCP config file
-- **Cursor**: import the project; Cursor detects it automatically
-- **Claude Code and others**: ask an AI for the config format — details differ, the principle is the same
+## Contributing
 
-Understanding the protocol itself also helps: how server and client communicate, and how tools are registered and called.
+Contributions based on your own documents and workflows are welcome, along with reports of problems and improvements.
 
-### 6. General advice: work with AI
+Areas to contribute include:
 
-Most of the questions above — provider switching, module extension, bug fixing, architecture questions — can be handled with AI assistance:
+- Additional document formats and better PDF table and image parsing.
+- Model adapters, vector storage backends, and retrieval strategies.
+- Evaluation questions and relevance labels for comparing configurations.
+- Document management, trace displays, and deployment workflows.
+- Bug fixes, tests, and documentation.
 
-- **Code**: switching providers, implementing evaluators, fixing bugs
-- **Knowledge**: architecture and design pattern questions
-- **Extension**: describe a new feature or scenario and have the AI implement it
-
-Working with AI is one of the core ideas this project wants to pass on.
-
-## Status and Contributing
-
-- Core features are complete and covered by a three-layer test suite (unit / integration / E2E), but the project is for learning and experimentation and does not promise production-level stability
-- Bug reports, suggestions, and new features via Issues and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
-- Fork the project and customize it for your own use case
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the Issue and PR workflow.
 
 ## License
 

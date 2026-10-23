@@ -13,7 +13,7 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-配置 Provider（Ollama 本地免费 / OpenAI / DeepSeek 等）见 [README 快速开始](README.md#-快速开始)。
+配置 Provider（Ollama 本地免费 / OpenAI / DeepSeek 等）见 [README 快速开始](README.md#快速开始)。
 
 ## 提交前检查清单
 
